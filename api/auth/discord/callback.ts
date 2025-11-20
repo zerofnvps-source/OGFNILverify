@@ -1,14 +1,14 @@
-
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST")
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
     const { code } = req.body;
 
-    if (!code) return res.status(400).json({ error: "No code provided" });
+    if (!code) {
+      return res.status(400).json({ error: "No code provided" });
+    }
 
     const params = new URLSearchParams({
       client_id: process.env.CLIENT_ID!,
@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!tokenRes.ok) {
       return res.status(500).json({
-        error: "Token exchange failed",
+        error: "Failed to exchange token",
         details: tokenData,
       });
     }
@@ -44,12 +44,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await userRes.json();
 
     return res.status(200).json({ user });
-  } catch (error) {
-    console.error(error);
-
+  } catch (err: any) {
     return res.status(500).json({
-      error: "INTERNAL_SERVER_ERROR",
-      details: String(error),
+      error: "Unexpected server error",
+      details: err?.message || String(err),
     });
   }
 }

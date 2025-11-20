@@ -1,53 +1,87 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+import express from "express";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+import crypto from "crypto";
+import path from "path";
 
-  try {
-    const { code } = req.body;
+dotenv.config();
 
-    if (!code) {
-      return res.status(400).json({ error: "No code provided" });
+const app = express();
+const port = process.env.PORT || 3000;
+
+const __dirname = path.resolve();
+
+// In-memory sessions (no MongoDB)
+const sessions = {};
+
+app.use(express.static("public"));
+
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/public/index.html");
+});
+
+app.get("/callback", async (req, res) => {
+    const code = req.query.code;
+    if (!code) return res.send("Missing ?code");
+
+    try {
+        const data = new URLSearchParams({
+            client_id: process.env.CLIENT_ID,
+            client_secret: process.env.CLIENT_SECRET,
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: process.env.REDIRECT_URI
+        });
+
+        const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+            method: "POST",
+            body: data,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        });
+
+        const tokenData = await tokenResponse.json();
+
+        if (tokenData.error) {
+            return res.send("OAuth Error: " + tokenData.error_description);
+        }
+
+        // Fetch user info
+        const userResponse = await fetch("https://discord.com/api/users/@me", {
+            headers: {
+                Authorization: `${tokenData.token_type} ${tokenData.access_token}`
+            }
+        });
+
+        const userData = await userResponse.json();
+
+        // Create session ID
+        const sessionId = crypto.randomBytes(32).toString("hex");
+
+        // Save everything server-side
+        sessions[sessionId] = {
+            user: userData,
+            token: tokenData
+        };
+
+        // Redirect to success page
+        res.redirect(`/success?session=${sessionId}`);
+
+    } catch (err) {
+        res.send("Internal error: " + err.message);
     }
+});
 
-    const params = new URLSearchParams({
-      client_id: process.env.CLIENT_ID,
-      client_secret: process.env.CLIENT_SECRET,
-      redirect_uri: process.env.REDIRECT_URI,
-      grant_type: "authorization_code",
-      code,
-    });
+app.get("/success", (req, res) => {
+    res.sendFile(__dirname + "/public/success.html");
+});
 
-    const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
-      method: "POST",
-      body: params,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
+app.get("/userinfo", (req, res) => {
+    const s = req.query.session;
+    if (!s || !sessions[s]) return res.json({ error: "Invalid session" });
 
-    const tokenData = await tokenRes.json();
+    res.json(sessions[s].user);
+});
 
-    if (!tokenRes.ok) {
-      return res.status(500).json({
-        error: "Failed to exchange token",
-        details: tokenData,
-      });
-    }
-
-    const userRes = await fetch("https://discord.com/api/users/@me", {
-      headers: {
-        Authorization: `${tokenData.token_type} ${tokenData.access_token}`,
-      },
-    });
-
-    const user = await userRes.json();
-
-    return res.status(200).json({ user });
-  } catch (err) {
-    return res.status(500).json({
-      error: "Unexpected server error",
-      details: err.message || String(err),
-    });
-  }
-}
+app.listen(port, () => {
+    console.log(`OAuth server running on port ${port}`);
+});

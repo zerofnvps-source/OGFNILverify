@@ -1,14 +1,12 @@
 {
   "name": "discord-oauth-vercel",
   "version": "1.0.0",
-  "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "vercel dev"
   },
   "dependencies": {
-    "node-fetch": "^3.4.1",
-    "dotenv": "^16.3.1",
-    "crypto": "^1.0.1"
+    "node-fetch": "^3.3.3",
+    "dotenv": "^16.3.1"
   }
 }

@@ -31,7 +31,7 @@
         const url = new URL(window.location.href);
         const session = url.searchParams.get("session");
 
-        fetch(`/userinfo?session=${session}`)
+       fetch(`/api/userinfo?session=${session}`)
             .then(res => res.json())
             .then(user => {
                 if (user.error) {

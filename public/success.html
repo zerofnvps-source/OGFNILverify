@@ -8,22 +8,18 @@
             color: cyan;
             font-family: Arial;
             text-align: center;
-            padding-top: 10%;
+            padding-top: 5%;
         }
-
         img {
             border-radius: 50%;
             width: 150px;
             box-shadow: 0 0 40px cyan;
         }
-
-        h2 {
-            text-shadow: 0 0 20px cyan;
-        }
+        h1, h2 { text-shadow: 0 0 20px cyan; }
+        p { font-size: 18px; }
     </style>
 </head>
 <body>
-
     <h1>Logged in Successfully!</h1>
     <div id="user"></div>
 
@@ -31,11 +27,11 @@
         const url = new URL(window.location.href);
         const session = url.searchParams.get("session");
 
-       fetch(`/api/userinfo?session=${session}`)
+        fetch(`/api/userinfo?session=${session}`)
             .then(res => res.json())
             .then(user => {
                 if (user.error) {
-                    document.getElementById("user").innerHTML = user.error;
+                    document.getElementById("user").innerHTML = `<p>${user.error}</p>`;
                     return;
                 }
 
@@ -46,6 +42,5 @@
                 `;
             });
     </script>
-
 </body>
 </html>

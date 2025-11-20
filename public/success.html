@@ -1,1 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Success</title>
+    <style>
+        body {
+            background: radial-gradient(circle, #00111a, #000000);
+            color: cyan;
+            font-family: Arial;
+            text-align: center;
+            padding-top: 10%;
+        }
 
+        img {
+            border-radius: 50%;
+            width: 150px;
+            box-shadow: 0 0 40px cyan;
+        }
+
+        h2 {
+            text-shadow: 0 0 20px cyan;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Logged in Successfully!</h1>
+    <div id="user"></div>
+
+    <script>
+        const url = new URL(window.location.href);
+        const session = url.searchParams.get("session");
+
+        fetch(`/userinfo?session=${session}`)
+            .then(res => res.json())
+            .then(user => {
+                if (user.error) {
+                    document.getElementById("user").innerHTML = user.error;
+                    return;
+                }
+
+                document.getElementById("user").innerHTML = `
+                    <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png">
+                    <h2>${user.username}#${user.discriminator}</h2>
+                    <p>ID: ${user.id}</p>
+                `;
+            });
+    </script>
+
+</body>
+</html>
